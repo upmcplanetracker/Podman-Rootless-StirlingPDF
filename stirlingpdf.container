@@ -1,0 +1,43 @@
+[Unit]
+Description=Stirling-PDF Service
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+# Image Note: 'latest-fat' includes all dependencies (OCR, Python, etc.)
+# Swap to 'latest' for a smaller, base install.
+Image=docker.io/stirlingtools/stirling-pdf:latest-fat
+ContainerName=stirling-pdf
+AutoUpdate=registry
+
+# Networking
+# Binding to 0.0.0.0 ensures reliable DNS resolution (e.g., pihole1.lan). Change the port to whatever one you want to use.
+PublishPort=0.0.0.0:8180:8080
+
+# Memory Management
+# Adjusting --memory for high-load OCR tasks. 
+# Java heap (-Xmx) should be roughly 50% of the total container memory limit.
+PodmanArgs=--memory=8G --memory-reservation=2G
+
+# Environment Variables
+Environment=TZ=America/New_York
+Environment=SECURITY_ENABLELOGIN=true
+Environment=DOCKER_ENABLE_SECURITY=true
+Environment=INSTALL_BOOK_AND_ADVANCED_HTML_OPS=false
+Environment=LANGS=en_US
+# Java Memory Settings: Xms (Start size), Xmx (Max size)
+Environment=JAVA_TOOL_OPTIONS="-Xms512m -Xmx4g"
+
+# Volumes: Using %h for user-level rootless portability
+Volume=%h/stirlingpdf/trainingData:/usr/share/tessdata
+Volume=%h/stirlingpdf/extraConfigs:/configs
+Volume=%h/stirlingpdf/customFiles:/customFiles
+Volume=%h/stirlingpdf/logs:/logs
+Volume=%h/stirlingpdf/pipeline:/pipeline
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target
